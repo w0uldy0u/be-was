@@ -22,12 +22,21 @@ public class RequestHandler implements Runnable {
 
         try (InputStream in = connection.getInputStream(); OutputStream out = connection.getOutputStream()) {
             // TODO 사용자 요청에 대한 처리는 이 곳에 구현하면 된다.
-            /* LLM의 도움 */
             BufferedReader br = new BufferedReader(new InputStreamReader(in));
             String requestLine = br.readLine();
-            /* LLM의 도움 */
+
             String[] tokens = requestLine.split(" ");
             String url = tokens[1];
+
+            StringBuilder requestLog = new StringBuilder();
+            requestLog.append(requestLine).append("\n");
+
+            while ((requestLine = br.readLine()) != null && !requestLine.isEmpty()) {
+                requestLog.append(requestLine).append("\n");
+            }
+
+            logger.debug(requestLog.toString());
+
             DataOutputStream dos = new DataOutputStream(out);
             File file = new File("src/main/resources/static" + url);
             byte[] body = Files.readAllBytes(file.toPath());
