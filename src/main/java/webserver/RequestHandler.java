@@ -12,7 +12,7 @@ import webserver.parser.HttpParser;
 public class RequestHandler implements Runnable {
     private static final Logger logger = LoggerFactory.getLogger(RequestHandler.class);
 
-    private Socket connection;
+    private final Socket connection;
 
     public RequestHandler(Socket connectionSocket) {
         this.connection = connectionSocket;
@@ -22,40 +22,31 @@ public class RequestHandler implements Runnable {
         logger.debug("New Client Connect! Connected IP : {}, Port : {}", connection.getInetAddress(),
                 connection.getPort());
 
+        DataOutputStream dos = null;
         try (InputStream in = connection.getInputStream(); OutputStream out = connection.getOutputStream()) {
             // TODO 사용자 요청에 대한 처리는 이 곳에 구현하면 된다.
+            dos = new DataOutputStream(out);
             BufferedReader br = new BufferedReader(new InputStreamReader(in));
             ParsedHttpRequest parsedHttpRequest = new HttpParser().parse(br);
 
             logger.debug(parsedHttpRequest.getHeader());
 
-            DataOutputStream dos = new DataOutputStream(out);
-            File file = new File("src/main/resources/static" + parsedHttpRequest.getPath());
-            byte[] body = Files.readAllBytes(file.toPath());
-            response200Header(dos, body.length);
-            responseBody(dos, body);
-        } catch (IOException e) {
-            logger.error(e.getMessage());
-        }
-    }
+            String path = parsedHttpRequest.getPath();
+            if (path.endsWith("/")) path = path + "index.html";
 
-    private void response200Header(DataOutputStream dos, int lengthOfBodyContent) {
-        try {
-            dos.writeBytes("HTTP/1.1 200 OK \r\n");
-            dos.writeBytes("Content-Type: text/html;charset=utf-8\r\n");
-            dos.writeBytes("Content-Length: " + lengthOfBodyContent + "\r\n");
-            dos.writeBytes("\r\n");
-        } catch (IOException e) {
+            try {
+                File file = new File("src/main/resources/static" + path);
+                byte[] body = Files.readAllBytes(file.toPath());
+                HttpResponseSender.send200(dos, body, ContentTypes.fromPath(path));
+            } catch (java.nio.file.NoSuchFileException e) {
+                HttpResponseSender.send404(dos);
+            }
+        } catch (Exception e) {
             logger.error(e.getMessage());
-        }
-    }
-
-    private void responseBody(DataOutputStream dos, byte[] body) {
-        try {
-            dos.write(body, 0, body.length);
-            dos.flush();
-        } catch (IOException e) {
-            logger.error(e.getMessage());
+            if (dos != null) {
+                try { HttpResponseSender.send500(dos); }
+                catch (IOException ignored) {}
+            }
         }
     }
 }
