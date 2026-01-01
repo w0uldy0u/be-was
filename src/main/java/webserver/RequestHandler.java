@@ -27,26 +27,50 @@ public class RequestHandler implements Runnable {
             // TODO 사용자 요청에 대한 처리는 이 곳에 구현하면 된다.
             dos = new DataOutputStream(out);
             BufferedReader br = new BufferedReader(new InputStreamReader(in));
-            ParsedHttpRequest parsedHttpRequest = new HttpParser().parse(br);
 
-            logger.debug(parsedHttpRequest.getHeader());
-
-            String path = parsedHttpRequest.getPath();
-            if (path.endsWith("/")) path = path + "index.html";
-
-            try {
-                File file = new File("src/main/resources/static" + path);
-                byte[] body = Files.readAllBytes(file.toPath());
-                HttpResponseSender.send200(dos, body, ContentTypes.fromPath(path));
-            } catch (java.nio.file.NoSuchFileException e) {
-                HttpResponseSender.send404(dos);
-            }
+            ParsedHttpRequest request = parseRequest(br);
+            serveStaticFile(dos, request.getPath());
+        } catch (java.nio.file.NoSuchFileException e) {
+            handleNotFound();
         } catch (Exception e) {
-            logger.error(e.getMessage());
-            if (dos != null) {
-                try { HttpResponseSender.send500(dos); }
-                catch (IOException ignored) {}
-            }
+            handleServerError(e);
+        }
+    }
+
+    private ParsedHttpRequest parseRequest(BufferedReader br) throws IOException {
+        ParsedHttpRequest request = new HttpParser().parse(br);
+        logger.debug(request.getHeader());
+        return request;
+    }
+
+    private String normalizePath(String path) {
+        if (path.endsWith("/")) {
+            return path + "index.html";
+        }
+        return path;
+    }
+
+    private void serveStaticFile(DataOutputStream dos, String path) throws IOException {
+        path = normalizePath(path);
+        File file = new File("src/main/resources/static" + path);
+        byte[] body = Files.readAllBytes(file.toPath());
+        HttpResponseSender.send200(dos, body, ContentTypes.fromPath(path));
+    }
+
+    private void handleNotFound() {
+        try {
+            DataOutputStream dos = new DataOutputStream(connection.getOutputStream());
+            HttpResponseSender.send404(dos);
+        } catch (IOException ignored) {
+        }
+    }
+
+    private void handleServerError(Exception e) {
+        logger.error("Internal Server Error", e);
+        try {
+            DataOutputStream dos = new DataOutputStream(connection.getOutputStream());
+            HttpResponseSender.send500(dos);
+        } catch (IOException ignored) {
         }
     }
 }
