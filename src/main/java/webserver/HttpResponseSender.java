@@ -9,12 +9,12 @@ public class HttpResponseSender {
     }
 
     public static void send404(DataOutputStream dos) throws IOException {
-        byte[] body = "<h1>404 Not Found</h1>".getBytes(StandardCharsets.UTF_8);
+        byte[] body = "<h1>404 Not Found</h1>".getBytes("UTF-8");
         sendResponse(dos, 404, "Not Found", body, "text/html;charset=utf-8");
     }
 
     public static void send500(DataOutputStream dos) throws IOException {
-        byte[] body = "<h1>500 Internal Server Error</h1>".getBytes(StandardCharsets.UTF_8);
+        byte[] body = "<h1>500 Internal Server Error</h1>".getBytes("UTF-8");
         sendResponse(dos, 500, "Internal Server Error", body, "text/html;charset=utf-8");
     }
 
