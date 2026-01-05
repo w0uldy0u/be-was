@@ -57,7 +57,7 @@ public class RequestHandler implements Runnable {
         Map<String, String> queryParams = req.getQueryParameters();
         User newUser = new User(queryParams.get("userId"), queryParams.get("password"), queryParams.get("name"), queryParams.get("email"));
         logger.debug(newUser.toString());
-        HttpResponseSender.send303(dos, "/login/");
+        HttpResponseSender.send303(dos, "/login");
     }
 
     private ParsedHttpRequest parseRequest(BufferedReader br) throws IOException {
@@ -67,10 +67,10 @@ public class RequestHandler implements Runnable {
     }
 
     private String normalizePath(String path) {
-        if (path.endsWith("/")) {
-            return path + "index.html";
+        if(path.matches(".*\\.[^./\\\\]{1,4}$")){
+            return path;
         }
-        return path;
+        return path + "/index.html";
     }
 
     private void serveStaticFile(String path) throws IOException {
