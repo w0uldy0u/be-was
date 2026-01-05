@@ -34,7 +34,7 @@ public class HttpParser {
         return new RequestLine(method, path, queryParams);
     }
 
-    private Map<String, String> parseQueryParams(String queryString) {
+    public static Map<String, String> parseQueryParams(String queryString) {
         Map<String, String> queryParams = new HashMap<>();
 
         if (queryString == null || queryString.isEmpty()) {

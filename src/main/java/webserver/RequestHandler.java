@@ -5,6 +5,7 @@ import java.net.Socket;
 import java.nio.file.Files;
 import java.util.Map;
 
+import model.HttpMethod;
 import model.ParsedHttpRequest;
 import model.User;
 import org.slf4j.Logger;
@@ -37,12 +38,19 @@ public class RequestHandler implements Runnable {
 
     private void route(ParsedHttpRequest request){
         String path = request.getPath();
+        HttpMethod method = request.getMethod();
 
         try {
-            if (path.startsWith("/create")) {
-                handleRegister(request);
-            } else {
-                serveStaticFile(path);
+            switch (method) {
+                case POST:
+                    if (path.equals("/create")) {
+                        handleRegister(request);
+                        return;
+                    }
+                    break;
+
+                case GET:
+                    serveStaticFile(path);
             }
         }
         catch (java.nio.file.NoSuchFileException e) {
@@ -54,14 +62,15 @@ public class RequestHandler implements Runnable {
     }
 
     private void handleRegister(ParsedHttpRequest req) throws IOException {
-        Map<String, String> queryParams = req.getQueryParameters();
-        User newUser = new User(queryParams.get("userId"), queryParams.get("password"), queryParams.get("name"), queryParams.get("email"));
+        Map<String, String> parameters = HttpParser.parseQueryParams(req.getBody());
+        User newUser = new User(parameters.get("userId"), parameters.get("password"), parameters.get("name"), parameters.get("email"));
         logger.debug(newUser.toString());
         HttpResponseSender.send303(dos, "/");
     }
 
     private ParsedHttpRequest parseRequest(BufferedReader br) throws IOException {
         ParsedHttpRequest request = new HttpParser().parse(br);
+        logger.debug(request.getMethod().toString());
         logger.debug(request.getHeader());
         return request;
     }
