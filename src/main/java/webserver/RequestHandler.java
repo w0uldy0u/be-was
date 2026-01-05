@@ -53,10 +53,11 @@ public class RequestHandler implements Runnable {
         }
     }
 
-    private void handleRegister(ParsedHttpRequest req){
+    private void handleRegister(ParsedHttpRequest req) throws IOException {
         Map<String, String> queryParams = req.getQueryParameters();
         User newUser = new User(queryParams.get("userId"), queryParams.get("password"), queryParams.get("name"), queryParams.get("email"));
         logger.debug(newUser.toString());
+        HttpResponseSender.send303(dos, "/login/");
     }
 
     private ParsedHttpRequest parseRequest(BufferedReader br) throws IOException {

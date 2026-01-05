@@ -8,6 +8,15 @@ public class HttpResponseSender {
         sendResponse(dos, 200, "OK", body, contentType);
     }
 
+    public static void send303(DataOutputStream dos, String location) throws IOException {
+        dos.writeBytes("HTTP/1.1 303 See Other\r\n");
+        dos.writeBytes("Location: " + location + "\r\n");
+        dos.writeBytes("Content-Length: 0\r\n");
+        dos.writeBytes("Connection: close\r\n");
+        dos.writeBytes("\r\n");
+        dos.flush();
+    }
+
     public static void send404(DataOutputStream dos) throws IOException {
         byte[] body = "<h1>404 Not Found</h1>".getBytes("UTF-8");
         sendResponse(dos, 404, "Not Found", body, "text/html;charset=utf-8");
