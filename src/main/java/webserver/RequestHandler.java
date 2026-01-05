@@ -3,8 +3,10 @@ package webserver;
 import java.io.*;
 import java.net.Socket;
 import java.nio.file.Files;
+import java.util.Map;
 
 import model.ParsedHttpRequest;
+import model.User;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import webserver.parser.HttpParser;
@@ -13,6 +15,7 @@ public class RequestHandler implements Runnable {
     private static final Logger logger = LoggerFactory.getLogger(RequestHandler.class);
 
     private final Socket connection;
+    private DataOutputStream dos;
 
     public RequestHandler(Socket connectionSocket) {
         this.connection = connectionSocket;
@@ -22,19 +25,38 @@ public class RequestHandler implements Runnable {
         logger.debug("New Client Connect! Connected IP : {}, Port : {}", connection.getInetAddress(),
                 connection.getPort());
 
-        DataOutputStream dos = null;
         try (InputStream in = connection.getInputStream(); OutputStream out = connection.getOutputStream()) {
             // TODO 사용자 요청에 대한 처리는 이 곳에 구현하면 된다.
             dos = new DataOutputStream(out);
             BufferedReader br = new BufferedReader(new InputStreamReader(in));
-
-            ParsedHttpRequest request = parseRequest(br);
-            serveStaticFile(dos, request.getPath());
-        } catch (java.nio.file.NoSuchFileException e) {
-            handleNotFound();
+            route(parseRequest(br));
         } catch (Exception e) {
             handleServerError(e);
         }
+    }
+
+    private void route(ParsedHttpRequest request){
+        String path = request.getPath();
+
+        try {
+            if (path.startsWith("/create")) {
+                handleRegister(request);
+            } else {
+                serveStaticFile(path);
+            }
+        }
+        catch (java.nio.file.NoSuchFileException e) {
+            handleNotFound();
+        }
+        catch (Exception e) {
+            handleServerError(e);
+        }
+    }
+
+    private void handleRegister(ParsedHttpRequest req){
+        Map<String, String> queryParams = req.getQueryParameters();
+        User newUser = new User(queryParams.get("userId"), queryParams.get("password"), queryParams.get("name"), queryParams.get("email"));
+        logger.debug(newUser.toString());
     }
 
     private ParsedHttpRequest parseRequest(BufferedReader br) throws IOException {
@@ -50,7 +72,7 @@ public class RequestHandler implements Runnable {
         return path;
     }
 
-    private void serveStaticFile(DataOutputStream dos, String path) throws IOException {
+    private void serveStaticFile(String path) throws IOException {
         path = normalizePath(path);
         File file = new File("src/main/resources/static" + path);
         byte[] body = Files.readAllBytes(file.toPath());
@@ -59,7 +81,6 @@ public class RequestHandler implements Runnable {
 
     private void handleNotFound() {
         try {
-            DataOutputStream dos = new DataOutputStream(connection.getOutputStream());
             HttpResponseSender.send404(dos);
         } catch (IOException ignored) {
         }
@@ -68,7 +89,6 @@ public class RequestHandler implements Runnable {
     private void handleServerError(Exception e) {
         logger.error("Internal Server Error", e);
         try {
-            DataOutputStream dos = new DataOutputStream(connection.getOutputStream());
             HttpResponseSender.send500(dos);
         } catch (IOException ignored) {
         }
