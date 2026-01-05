@@ -57,7 +57,7 @@ public class RequestHandler implements Runnable {
         Map<String, String> queryParams = req.getQueryParameters();
         User newUser = new User(queryParams.get("userId"), queryParams.get("password"), queryParams.get("name"), queryParams.get("email"));
         logger.debug(newUser.toString());
-        HttpResponseSender.send303(dos, "/login");
+        HttpResponseSender.send303(dos, "/");
     }
 
     private ParsedHttpRequest parseRequest(BufferedReader br) throws IOException {
