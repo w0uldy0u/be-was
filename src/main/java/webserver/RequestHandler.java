@@ -2,13 +2,13 @@ package webserver;
 
 import java.io.*;
 import java.net.Socket;
+import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.util.Map;
+import java.util.UUID;
 
 import db.Database;
-import model.HttpMethod;
-import model.ParsedHttpRequest;
-import model.User;
+import model.*;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import webserver.parser.HttpParser;
@@ -47,6 +47,8 @@ public class RequestHandler implements Runnable {
                     if (path.equals("/create")) {
                         handleRegister(request);
                         return;
+                    } else if (path.equals("/login")) {
+                        handleLogin(request);
                     }
                     break;
 
@@ -55,11 +57,33 @@ public class RequestHandler implements Runnable {
             }
         }
         catch (java.nio.file.NoSuchFileException e) {
-            handleNotFound();
+            handleNotFound(e);
         }
         catch (Exception e) {
             handleServerError(e);
         }
+    }
+
+    private void handleLogin(ParsedHttpRequest req) throws IOException {
+        Map<String, String> parameters = HttpParser.parseQueryParams(req.getBody());
+        String userId = parameters.get("userId");
+        String pw = parameters.get("password");
+        if(userId == null || pw == null) {
+            handleBadRequest();
+            return;
+        }
+
+        User currentUser = Database.findUserById(userId);
+        if(currentUser != null && currentUser.getPassword().equals(pw)){
+            logger.debug("Login Success");
+            String sid = UUID.randomUUID().toString();
+            String cookie = "SID=" + sid + "; Path=/";
+            HttpResponse res = HttpResponse.redirect("/").header("Set-Cookie", cookie);
+            HttpResponseSender.send(dos, res);
+            return;
+        }
+
+        handleUnauthorized();
     }
 
     private void handleRegister(ParsedHttpRequest req) throws IOException {
@@ -67,11 +91,13 @@ public class RequestHandler implements Runnable {
         User newUser = new User(parameters.get("userId"), parameters.get("password"), parameters.get("name"), parameters.get("email"));
         Database.addUser(newUser);
         logger.debug(newUser.toString());
-        HttpResponseSender.send303(dos, "/");
+        HttpResponse res = HttpResponse.redirect("/");
+        HttpResponseSender.send(dos, res);
     }
 
     private ParsedHttpRequest parseRequest(BufferedReader br) throws IOException {
         ParsedHttpRequest request = new HttpParser().parse(br);
+        logger.debug(request.getPath());
         logger.debug(request.getMethod().toString());
         logger.debug(request.getHeader());
         return request;
@@ -88,21 +114,41 @@ public class RequestHandler implements Runnable {
         path = normalizePath(path);
         File file = new File("src/main/resources/static" + path);
         byte[] body = Files.readAllBytes(file.toPath());
-        HttpResponseSender.send200(dos, body, ContentTypes.fromPath(path));
+        HttpResponse res = HttpResponse.of(HttpStatus.OK)
+                                        .contentType(ContentTypes.fromPath(path))
+                                        .body(body);
+        HttpResponseSender.send(dos, res);
     }
 
-    private void handleNotFound() {
+    private void sendError(HttpStatus status, String message) {
         try {
-            HttpResponseSender.send404(dos);
+            byte[] body = message.getBytes(StandardCharsets.UTF_8);
+            HttpResponse res = HttpResponse.of(status)
+                    .contentType("text/html;charset=utf-8")
+                    .body(body);
+
+            HttpResponseSender.send(dos, res);
         } catch (IOException ignored) {
         }
+    }
+
+    private void handleNotFound(Exception e) {
+        logger.error("Not Found", e);
+        sendError(HttpStatus.NOT_FOUND,"<h1>404 Not Found</h1>");
     }
 
     private void handleServerError(Exception e) {
         logger.error("Internal Server Error", e);
-        try {
-            HttpResponseSender.send500(dos);
-        } catch (IOException ignored) {
-        }
+        sendError(HttpStatus.INTERNAL_SERVER_ERROR, "<h1>500 Internal Server Error</h1>");
+    }
+
+    private void handleBadRequest(){
+        logger.error("Bad Request");
+        sendError(HttpStatus.BAD_REQUEST, "<h1>400 Bad Request</h1>");
+    }
+
+    private void handleUnauthorized(){
+        logger.error("Unauthorized");
+        sendError(HttpStatus.UNAUTHORIZED, "<h1>401 Unauthorized</h1>");
     }
 }

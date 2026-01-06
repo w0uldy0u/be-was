@@ -1,57 +1,54 @@
 package webserver;
 
+import model.HttpResponse;
+import model.HttpStatus;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import java.io.DataOutputStream;
 import java.io.IOException;
+import java.nio.charset.StandardCharsets;
+import java.util.Arrays;
+import java.util.Map;
 
 public class HttpResponseSender {
-    public static void send200(DataOutputStream dos, byte[] body, String contentType) throws IOException {
-        sendResponse(dos, 200, "OK", body, contentType);
+    private static final Logger logger = LoggerFactory.getLogger(RequestHandler.class);
+
+    public static void send(DataOutputStream dos, HttpResponse res) throws IOException {
+        logger.debug(new String(res.getBody(), StandardCharsets.UTF_8));
+        writeStatusLine(dos, res.getStatus());
+        writeHeaders(dos, res);
+        writeBody(dos, res.getBody());
     }
 
-    public static void send303(DataOutputStream dos, String location) throws IOException {
-        dos.writeBytes("HTTP/1.1 303 See Other\r\n");
-        dos.writeBytes("Location: " + location + "\r\n");
-        dos.writeBytes("Content-Length: 0\r\n");
-        dos.writeBytes("Connection: close\r\n");
-        dos.writeBytes("\r\n");
-        dos.flush();
+    private static void writeStatusLine(DataOutputStream dos, HttpStatus status) throws IOException {
+        dos.writeBytes(
+                "HTTP/1.1 "
+                        + status.code()
+                        + " "
+                        + status.reason()
+                        + "\r\n"
+        );
     }
 
-    public static void send404(DataOutputStream dos) throws IOException {
-        byte[] body = "<h1>404 Not Found</h1>".getBytes("UTF-8");
-        sendResponse(dos, 404, "Not Found", body, "text/html;charset=utf-8");
-    }
+    private static void writeHeaders(DataOutputStream dos, HttpResponse res) throws IOException {
+        dos.writeBytes("Content-Type: " + res.getContentType() + "\r\n");
 
-    public static void send500(DataOutputStream dos) throws IOException {
-        byte[] body = "<h1>500 Internal Server Error</h1>".getBytes("UTF-8");
-        sendResponse(dos, 500, "Internal Server Error", body, "text/html;charset=utf-8");
-    }
+        byte[] body = res.getBody();
+        dos.writeBytes("Content-Length: " + body.length + "\r\n");
 
-    private static void sendResponse(
-            DataOutputStream dos,
-            int statusCode,
-            String statusMessage,
-            byte[] body,
-            String contentType
-    ) throws IOException {
-        writeStatusLine(dos, statusCode, statusMessage);
-        writeHeaders(dos, body.length, contentType);
-        writeBody(dos, body);
-    }
+        for (Map.Entry<String, String> entry : res.getHeaders().entrySet()) {
+            dos.writeBytes(entry.getKey() + ": " + entry.getValue() + "\r\n");
+        }
 
-    private static void writeStatusLine(DataOutputStream dos, int code, String msg) throws IOException {
-        dos.writeBytes("HTTP/1.1 " + code + " " + msg + "\r\n");
-    }
-
-    private static void writeHeaders(DataOutputStream dos, int length, String contentType) throws IOException {
-        dos.writeBytes("Content-Type: " + contentType + "\r\n");
-        dos.writeBytes("Content-Length: " + length + "\r\n");
         dos.writeBytes("Connection: close\r\n");
         dos.writeBytes("\r\n");
     }
 
     private static void writeBody(DataOutputStream dos, byte[] body) throws IOException {
-        dos.write(body);
+        if (body.length > 0) {
+            dos.write(body);
+        }
         dos.flush();
     }
 }
