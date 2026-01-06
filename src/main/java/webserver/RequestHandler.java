@@ -5,6 +5,7 @@ import java.net.Socket;
 import java.nio.file.Files;
 import java.util.Map;
 
+import db.Database;
 import model.HttpMethod;
 import model.ParsedHttpRequest;
 import model.User;
@@ -64,6 +65,7 @@ public class RequestHandler implements Runnable {
     private void handleRegister(ParsedHttpRequest req) throws IOException {
         Map<String, String> parameters = HttpParser.parseQueryParams(req.getBody());
         User newUser = new User(parameters.get("userId"), parameters.get("password"), parameters.get("name"), parameters.get("email"));
+        Database.addUser(newUser);
         logger.debug(newUser.toString());
         HttpResponseSender.send303(dos, "/");
     }
