@@ -13,7 +13,6 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import webserver.parser.HttpParser;
 
-import javax.xml.crypto.Data;
 
 public class RequestHandler implements Runnable {
     private static final Logger logger = LoggerFactory.getLogger(RequestHandler.class);
@@ -55,6 +54,12 @@ public class RequestHandler implements Runnable {
                     break;
 
                 case GET:
+                    if(path.equals("/main")) {
+                        handleMain(request);
+                    }
+                    else if (path.equals("/")){
+                        handleHome(request);
+                    }
                     serveStaticFile(path);
             }
         }
@@ -64,6 +69,24 @@ public class RequestHandler implements Runnable {
         catch (Exception e) {
             handleServerError(e);
         }
+    }
+
+    private void handleHome(ParsedHttpRequest req) throws IOException {
+        String sid = req.getCookie("SID");
+        if(Database.findUserBySid(sid) != null){
+            HttpResponse res = HttpResponse.redirect("/main");
+            HttpResponseSender.send(dos, res);
+        }
+        serveStaticFile("/");
+    }
+
+    private void handleMain(ParsedHttpRequest req) throws IOException {
+        String sid = req.getCookie("SID");
+        if(Database.findUserBySid(sid) == null){
+            HttpResponse res = HttpResponse.redirect("/");
+            HttpResponseSender.send(dos, res);
+        }
+        serveStaticFile("/main");
     }
 
     private void handleLogin(ParsedHttpRequest req) throws IOException {
@@ -83,7 +106,7 @@ public class RequestHandler implements Runnable {
             Database.addSession(sid, userId);
 
             String cookie = "SID=" + sid + "; Path=/";
-            HttpResponse res = HttpResponse.redirect("/").header("Set-Cookie", cookie);
+            HttpResponse res = HttpResponse.redirect("/main").header("Set-Cookie", cookie);
             HttpResponseSender.send(dos, res);
             return;
         }
