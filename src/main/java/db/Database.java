@@ -22,8 +22,13 @@ public class Database {
         sessions.put(sid, userId);
     }
 
-    public static User findUserBySid(String sid){
-        return users.get(sessions.get(sid));
+    public static User findUserBySid(String sid) {
+        if (sid == null) return null;
+
+        String userId = sessions.get(sid);
+        if (userId == null) return null;
+
+        return users.get(userId);
     }
 
     public static Collection<User> findAll() {
