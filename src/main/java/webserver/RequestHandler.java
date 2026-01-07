@@ -13,6 +13,8 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import webserver.parser.HttpParser;
 
+import javax.xml.crypto.Data;
+
 public class RequestHandler implements Runnable {
     private static final Logger logger = LoggerFactory.getLogger(RequestHandler.class);
 
@@ -77,6 +79,9 @@ public class RequestHandler implements Runnable {
         if(currentUser != null && currentUser.getPassword().equals(pw)){
             logger.debug("Login Success");
             String sid = UUID.randomUUID().toString();
+
+            Database.addSession(sid, userId);
+
             String cookie = "SID=" + sid + "; Path=/";
             HttpResponse res = HttpResponse.redirect("/").header("Set-Cookie", cookie);
             HttpResponseSender.send(dos, res);

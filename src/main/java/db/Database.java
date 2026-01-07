@@ -8,6 +8,7 @@ import java.util.Map;
 
 public class Database {
     private static Map<String, User> users = new HashMap<>();
+    private static Map<String, String> sessions = new HashMap<>();
 
     public static void addUser(User user) {
         users.put(user.getUserId(), user);
@@ -15,6 +16,14 @@ public class Database {
 
     public static User findUserById(String userId) {
         return users.get(userId);
+    }
+
+    public static void addSession(String sid, String userId){
+        sessions.put(sid, userId);
+    }
+
+    public static User findUserBySid(String sid){
+        return users.get(sessions.get(sid));
     }
 
     public static Collection<User> findAll() {
