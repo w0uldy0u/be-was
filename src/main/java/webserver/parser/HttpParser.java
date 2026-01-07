@@ -15,7 +15,7 @@ public class HttpParser {
         HeadersResult hr = parseHeaders(br);
         String body = parseBody(br, hr.contentLength);
 
-        return new ParsedHttpRequest(rl.method, rl.path, rl.queryParameters, hr.rawHeaders, body);
+        return new ParsedHttpRequest(rl.method, rl.path, rl.queryParameters, hr.rawHeaders, hr.cookies, body);
     }
 
     private RequestLine parseRequestLine(BufferedReader br) throws IOException {
@@ -59,6 +59,7 @@ public class HttpParser {
     private HeadersResult parseHeaders(BufferedReader br) throws IOException {
         StringBuilder sb = new StringBuilder();
         int contentLength = 0;
+        Map<String, String> cookies = new HashMap<>();
 
         String line;
         while ((line = br.readLine()) != null && !line.isEmpty()) {
@@ -72,10 +73,13 @@ public class HttpParser {
                     try { contentLength = Integer.parseInt(val); }
                     catch (NumberFormatException ignored) {}
                 }
+                else if(key.equalsIgnoreCase("Cookie")){
+                    cookies = parseCookie(val);
+                }
             }
         }
 
-        return new HeadersResult(sb.toString(), contentLength);
+        return new HeadersResult(sb.toString(), contentLength, cookies);
     }
 
     private String parseBody(BufferedReader br, int contentLength) throws IOException {
@@ -91,6 +95,31 @@ public class HttpParser {
         return new String(buf, 0, readTotal);
     }
 
+    private Map<String, String> parseCookie(String rawCookie) {
+        Map<String, String> cookies = new HashMap<>();
+
+        if (rawCookie == null || rawCookie.isEmpty()) {
+            return cookies;
+        }
+
+        String[] pairs = rawCookie.split(";");
+
+        for (String pair : pairs) {
+            pair = pair.trim();
+            if (pair.isEmpty()) continue;
+
+            String[] kv = pair.split("=", 2); // ★ 중요: 2개만
+            String key = kv[0].trim();
+            String value = kv.length > 1 ? kv[1].trim() : "";
+
+            if (!key.isEmpty()) {
+                cookies.put(key, value);
+            }
+        }
+
+        return cookies;
+    }
+
     private static class RequestLine {
         final HttpMethod method;
         final String path;
@@ -104,10 +133,12 @@ public class HttpParser {
 
     private static class HeadersResult {
         final String rawHeaders;
+        Map<String, String> cookies = new HashMap<>();
         final int contentLength;
-        HeadersResult(String rawHeaders, int contentLength) {
+        HeadersResult(String rawHeaders, int contentLength, Map<String, String> cookies) {
             this.rawHeaders = rawHeaders;
             this.contentLength = contentLength;
+            this.cookies = cookies;
         }
     }
 }

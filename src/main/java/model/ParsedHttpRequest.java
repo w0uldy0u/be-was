@@ -9,12 +9,14 @@ public final class ParsedHttpRequest {
     private final HttpMethod method;
     private final String header;
     private final String body;
+    private final Map<String, String> cookies;
 
-    public ParsedHttpRequest(HttpMethod method, String path, Map<String, String> queryParameters, String header, String body){
+    public ParsedHttpRequest(HttpMethod method, String path, Map<String, String> queryParameters, String header, Map<String, String> cookies, String body){
         this.path = path;
         this.queryParameters = Collections.unmodifiableMap(queryParameters);
         this.method = method;
         this.header = header;
+        this.cookies = cookies;
         this.body = body;
     }
 
@@ -32,6 +34,15 @@ public final class ParsedHttpRequest {
 
     public String getHeader(){
         return header;
+    }
+
+    public Map<String, String> getCookies(){
+        return cookies;
+    }
+
+    public String getCookie(String name) {
+        if (cookies == null) return null;
+        return cookies.get(name);
     }
 
     public String getBody(){
