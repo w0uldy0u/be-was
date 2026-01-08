@@ -82,11 +82,22 @@ public class RequestHandler implements Runnable {
 
     private void handleMain(ParsedHttpRequest req) throws IOException {
         String sid = req.getCookie("SID");
-        if(Database.findUserBySid(sid) == null){
+        User currentUser = Database.findUserBySid(sid);
+
+        if( currentUser == null){
             HttpResponse res = HttpResponse.redirect("/");
             HttpResponseSender.send(dos, res);
         }
-        serveStaticFile("/main");
+
+        String html = TemplateEngine.render("main/index.html", Map.of(
+                "username", currentUser.getUserId()
+        ));
+
+        HttpResponse res = HttpResponse.of(HttpStatus.OK)
+                .contentType("text/html;charset=utf-8")
+                .body(html.getBytes(StandardCharsets.UTF_8));
+
+        HttpResponseSender.send(dos, res);
     }
 
     private void handleLogin(ParsedHttpRequest req) throws IOException {
