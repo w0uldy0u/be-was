@@ -50,6 +50,8 @@ public class RequestHandler implements Runnable {
                         return;
                     } else if (path.equals("/login")) {
                         handleLogin(request);
+                    } else if (path.equals("/logout")){
+                        handleLogout(request);
                     }
                     break;
 
@@ -69,6 +71,14 @@ public class RequestHandler implements Runnable {
         catch (Exception e) {
             handleServerError(e);
         }
+    }
+
+    private void handleLogout(ParsedHttpRequest req) throws IOException {
+        String sid = req.getCookie("SID");
+        Database.logout(sid);
+        String cookie = "SID=; Path=/; Max-Age=0";
+        HttpResponse res = HttpResponse.redirect("/").header("Set-Cookie", cookie);
+        HttpResponseSender.send(dos, res);
     }
 
     private void handleHome(ParsedHttpRequest req) throws IOException {

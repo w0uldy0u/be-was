@@ -31,6 +31,10 @@ public class Database {
         return users.get(userId);
     }
 
+    public static void logout(String sid){
+        sessions.remove(sid);
+    }
+
     public static Collection<User> findAll() {
         return users.values();
     }
