@@ -62,6 +62,9 @@ public class RequestHandler implements Runnable {
                     else if (path.equals("/")){
                         handleHome(request);
                     }
+                    else if (path.equals("/mypage")){
+                        handleMypage(request);
+                    }
                     serveStaticFile(path);
             }
         }
@@ -71,6 +74,17 @@ public class RequestHandler implements Runnable {
         catch (Exception e) {
             handleServerError(e);
         }
+    }
+
+    private void handleMypage(ParsedHttpRequest req) throws IOException {
+        String sid = req.getCookie("SID");
+        User currentUser = Database.findUserBySid(sid);
+
+        if( currentUser == null){
+            HttpResponse res = HttpResponse.redirect("/login");
+            HttpResponseSender.send(dos, res);
+        }
+        serveStaticFile("/mypage");
     }
 
     private void handleLogout(ParsedHttpRequest req) throws IOException {
