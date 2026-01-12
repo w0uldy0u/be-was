@@ -65,7 +65,12 @@ public class RequestHandler implements Runnable {
                     else if (path.equals("/mypage")){
                         handleMypage(request);
                     }
-                    serveStaticFile(path);
+                    else if (path.equals("/article")){
+                        handleWrite(request);
+                    }
+                    else {
+                        serveStaticFile(path);
+                    }
             }
         }
         catch (java.nio.file.NoSuchFileException e) {
@@ -76,11 +81,22 @@ public class RequestHandler implements Runnable {
         }
     }
 
+    private void handleWrite(ParsedHttpRequest req) throws IOException {
+        String sid = req.getCookie("SID");
+        User currentUser = Database.findUserBySid(sid);
+
+        if(currentUser == null){
+            HttpResponse res = HttpResponse.redirect("/login");
+            HttpResponseSender.send(dos, res);
+        }
+        serveStaticFile("/article");
+    }
+
     private void handleMypage(ParsedHttpRequest req) throws IOException {
         String sid = req.getCookie("SID");
         User currentUser = Database.findUserBySid(sid);
 
-        if( currentUser == null){
+        if(currentUser == null){
             HttpResponse res = HttpResponse.redirect("/login");
             HttpResponseSender.send(dos, res);
         }
