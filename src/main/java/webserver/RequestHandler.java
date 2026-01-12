@@ -167,7 +167,17 @@ public class RequestHandler implements Runnable {
 
     private void handleRegister(ParsedHttpRequest req) throws IOException {
         Map<String, String> parameters = HttpParser.parseQueryParams(req.getBody());
-        User newUser = new User(parameters.get("userId"), parameters.get("password"), parameters.get("name"), parameters.get("email"));
+        String userId = parameters.get("userId");
+        String password = parameters.get("password");
+        String name = parameters.get("name");
+        String email = parameters.get("email");
+
+        if (userId.isBlank() || password.isBlank() || name.isBlank() || email.isBlank()) {
+            handleBadRequest();
+            return;
+        }
+
+        User newUser = new User(userId, password, name, email);
         Database.addUser(newUser);
         logger.debug(newUser.toString());
         HttpResponse res = HttpResponse.redirect("/");
