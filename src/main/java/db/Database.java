@@ -27,8 +27,8 @@ public class Database {
         SessionRepository.logout(sid);
     }
 
-    public static synchronized void addArticle(String authorId, String content) {
-        ArticleRepository.addArticle(authorId, content);
+    public static void addArticle(String authorId, String content, byte[] image) {
+        ArticleRepository.addArticle(authorId, content, image);
     }
 
     public static Article findArticleById(int articleId) {

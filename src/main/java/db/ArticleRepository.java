@@ -6,12 +6,17 @@ import java.sql.*;
 
 public class ArticleRepository {
 
-    public static void addArticle(String authorId, String content) {
-        String sql = "INSERT INTO articles (author_id, content) VALUES (?, ?)";
+    public static void addArticle(String authorId, String content, byte[] image) {
+        String sql = "INSERT INTO articles (author_id, content, image) VALUES (?, ?, ?)";
         try (Connection conn = DatabaseConnection.getConnection();
              PreparedStatement pstmt = conn.prepareStatement(sql)) {
             pstmt.setString(1, authorId);
             pstmt.setString(2, content);
+            if (image != null && image.length > 0) {
+                pstmt.setBytes(3, image);
+            } else {
+                pstmt.setNull(3, Types.BLOB);
+            }
             pstmt.executeUpdate();
         } catch (SQLException e) {
             throw new RuntimeException("Failed to add article", e);
@@ -19,7 +24,7 @@ public class ArticleRepository {
     }
 
     public static Article findArticleById(int articleId) {
-        String sql = "SELECT id, author_id, content FROM articles WHERE id = ?";
+        String sql = "SELECT id, author_id, content, image FROM articles WHERE id = ?";
         try (Connection conn = DatabaseConnection.getConnection();
              PreparedStatement pstmt = conn.prepareStatement(sql)) {
             pstmt.setInt(1, articleId);
@@ -28,7 +33,8 @@ public class ArticleRepository {
                     return new Article(
                         rs.getInt("id"),
                         rs.getString("author_id"),
-                        rs.getString("content")
+                        rs.getString("content"),
+                        rs.getBytes("image")
                     );
                 }
             }

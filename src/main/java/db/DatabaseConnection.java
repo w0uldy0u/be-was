@@ -46,6 +46,7 @@ public class DatabaseConnection {
                     id INT AUTO_INCREMENT PRIMARY KEY,
                     author_id VARCHAR(255) NOT NULL,
                     content TEXT NOT NULL,
+                    image BLOB,
                     FOREIGN KEY (author_id) REFERENCES users(user_id)
                 )
             """);
