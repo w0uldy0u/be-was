@@ -4,13 +4,13 @@ public class Article {
     private final int id;
     private final String authorId;
     private final String content;
-    private final byte[] image;
+    private final String imagePath;
 
-    public Article(int id, String authorId, String content, byte[] image) {
+    public Article(int id, String authorId, String content, String imagePath) {
         this.id = id;
         this.authorId = authorId;
         this.content = content;
-        this.image = image;
+        this.imagePath = imagePath;
     }
 
     public int getId() {
@@ -25,7 +25,7 @@ public class Article {
         return content;
     }
 
-    public byte[] getImage() {
-        return image;
+    public String getImagePath() {
+        return imagePath;
     }
 }
