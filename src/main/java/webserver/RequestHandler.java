@@ -12,6 +12,7 @@ import model.*;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import webserver.parser.HttpParser;
+import webserver.parser.MultipartParser;
 
 
 public class RequestHandler implements Runnable {
@@ -31,8 +32,7 @@ public class RequestHandler implements Runnable {
         try (InputStream in = connection.getInputStream(); OutputStream out = connection.getOutputStream()) {
             // TODO 사용자 요청에 대한 처리는 이 곳에 구현하면 된다.
             dos = new DataOutputStream(out);
-            BufferedReader br = new BufferedReader(new InputStreamReader(in));
-            route(parseRequest(br));
+            route(parseRequest(in));
         } catch (Exception e) {
             handleServerError(e);
         }
@@ -52,6 +52,8 @@ public class RequestHandler implements Runnable {
                         handleLogin(request);
                     } else if (path.equals("/logout")){
                         handleLogout(request);
+                    } else if (path.equals("/article")){
+                        handleArticleUpload(request);
                     }
                     break;
 
@@ -81,6 +83,43 @@ public class RequestHandler implements Runnable {
         }
     }
 
+    private void handleArticleUpload(ParsedHttpRequest req) throws IOException {
+        String sid = req.getCookie("SID");
+        User currentUser = Database.findUserBySid(sid);
+
+        if (currentUser == null) {
+            handleUnauthorized();
+            return;
+        }
+
+        String boundary = MultipartParser.extractBoundary(req.getHeader("content-type"));
+
+        if (boundary == null) {
+            handleBadRequest();
+            return;
+        }
+
+        MultipartParser.MultipartData data = MultipartParser.parse(req.getRawBody(), boundary);
+
+        String content = data.getTextField("content");
+        byte[] image = data.getFileField("image");
+
+        if (content == null || content.isBlank()) {
+            handleBadRequest();
+            return;
+        }
+
+        String imagePath = null;
+        if (image != null && image.length > 0) {
+            imagePath = utils.ImageStore.saveImage(image, "jpg");
+        }
+
+        Database.addArticle(currentUser.getUserId(), content, imagePath);
+
+        HttpResponse res = HttpResponse.redirect("/main");
+        HttpResponseSender.send(dos, res);
+    }
+
     private void handleWrite(ParsedHttpRequest req) throws IOException {
         String sid = req.getCookie("SID");
         User currentUser = Database.findUserBySid(sid);
@@ -88,6 +127,7 @@ public class RequestHandler implements Runnable {
         if(currentUser == null){
             HttpResponse res = HttpResponse.redirect("/login");
             HttpResponseSender.send(dos, res);
+            return;
         }
         serveStaticFile("/article");
     }
@@ -99,6 +139,7 @@ public class RequestHandler implements Runnable {
         if(currentUser == null){
             HttpResponse res = HttpResponse.redirect("/login");
             HttpResponseSender.send(dos, res);
+            return;
         }
         serveStaticFile("/mypage");
     }
@@ -116,6 +157,7 @@ public class RequestHandler implements Runnable {
         if(Database.findUserBySid(sid) != null){
             HttpResponse res = HttpResponse.redirect("/main");
             HttpResponseSender.send(dos, res);
+            return;
         }
         serveStaticFile("/");
     }
@@ -127,6 +169,7 @@ public class RequestHandler implements Runnable {
         if( currentUser == null){
             HttpResponse res = HttpResponse.redirect("/");
             HttpResponseSender.send(dos, res);
+            return;
         }
 
         String html = TemplateEngine.render("main/index.html", Map.of(
@@ -184,11 +227,10 @@ public class RequestHandler implements Runnable {
         HttpResponseSender.send(dos, res);
     }
 
-    private ParsedHttpRequest parseRequest(BufferedReader br) throws IOException {
-        ParsedHttpRequest request = new HttpParser().parse(br);
+    private ParsedHttpRequest parseRequest(InputStream in) throws IOException {
+        ParsedHttpRequest request = new HttpParser().parse(in);
         logger.debug(request.getPath());
         logger.debug(request.getMethod().toString());
-        logger.debug(request.getHeader());
         return request;
     }
 

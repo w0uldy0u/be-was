@@ -7,24 +7,27 @@ public final class ParsedHttpRequest {
     private final String path;
     private final Map<String, String> queryParameters;
     private final HttpMethod method;
-    private final String header;
+    private final Map<String, String> headers;
     private final String body;
+    private final byte[] rawBody;
     private final Map<String, String> cookies;
 
-    public ParsedHttpRequest(HttpMethod method, String path, Map<String, String> queryParameters, String header, Map<String, String> cookies, String body){
+    public ParsedHttpRequest(HttpMethod method, String path, Map<String, String> queryParameters, 
+                             Map<String, String> headers, Map<String, String> cookies, String body, byte[] rawBody) {
         this.path = path;
         this.queryParameters = Collections.unmodifiableMap(queryParameters);
         this.method = method;
-        this.header = header;
+        this.headers = headers;
         this.cookies = cookies;
         this.body = body;
+        this.rawBody = rawBody;
     }
 
-    public String getPath(){
+    public String getPath() {
         return path;
     }
 
-    public HttpMethod getMethod(){
+    public HttpMethod getMethod() {
         return method;
     }
 
@@ -32,11 +35,16 @@ public final class ParsedHttpRequest {
         return queryParameters;
     }
 
-    public String getHeader(){
-        return header;
+    public String getHeader(String name) {
+        if (headers == null) return null;
+        return headers.get(name.toLowerCase());
     }
 
-    public Map<String, String> getCookies(){
+    public Map<String, String> getHeaders() {
+        return headers;
+    }
+
+    public Map<String, String> getCookies() {
         return cookies;
     }
 
@@ -45,7 +53,11 @@ public final class ParsedHttpRequest {
         return cookies.get(name);
     }
 
-    public String getBody(){
+    public String getBody() {
         return body;
+    }
+
+    public byte[] getRawBody() {
+        return rawBody;
     }
 }

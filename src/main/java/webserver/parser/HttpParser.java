@@ -3,23 +3,56 @@ package webserver.parser;
 import model.HttpMethod;
 import model.ParsedHttpRequest;
 
-import java.io.BufferedReader;
 import java.io.IOException;
+import java.io.InputStream;
+import java.nio.charset.StandardCharsets;
 import java.util.HashMap;
 import java.util.Map;
 
 public class HttpParser {
 
-    public ParsedHttpRequest parse(BufferedReader br) throws IOException {
-        RequestLine rl = parseRequestLine(br);
-        HeadersResult hr = parseHeaders(br);
-        String body = parseBody(br, hr.contentLength);
+    public ParsedHttpRequest parse(InputStream in) throws IOException {
+        StringBuilder headerBuilder = new StringBuilder();
+        int prev = 0;
+        int curr;
+        
+        while ((curr = in.read()) != -1) {
+            headerBuilder.append((char) curr);
+            String built = headerBuilder.toString();
+            if (built.endsWith("\r\n\r\n")) {
+                break;
+            }
+        }
 
-        return new ParsedHttpRequest(rl.method, rl.path, rl.queryParameters, hr.rawHeaders, hr.cookies, body);
+        String headerSection = headerBuilder.toString();
+        String[] lines = headerSection.split("\r\n");
+        
+        if (lines.length == 0) {
+            throw new IOException("Empty request");
+        }
+
+        RequestLine rl = parseRequestLine(lines[0]);
+        
+        HeadersResult hr = parseHeaders(lines);
+
+        byte[] rawBody = new byte[0];
+        String body = "";
+        
+        if (hr.contentLength > 0) {
+            rawBody = new byte[hr.contentLength];
+            int readTotal = 0;
+            while (readTotal < hr.contentLength) {
+                int r = in.read(rawBody, readTotal, hr.contentLength - readTotal);
+                if (r == -1) break;
+                readTotal += r;
+            }
+            body = new String(rawBody, 0, readTotal, StandardCharsets.UTF_8);
+        }
+
+        return new ParsedHttpRequest(rl.method, rl.path, rl.queryParameters, hr.headers, hr.cookies, body, rawBody);
     }
 
-    private RequestLine parseRequestLine(BufferedReader br) throws IOException {
-        String line = br.readLine();
+    private RequestLine parseRequestLine(String line) {
         if (line == null || line.isEmpty()) return null;
 
         String[] tokens = line.split(" ");
@@ -56,14 +89,14 @@ public class HttpParser {
         return queryParams;
     }
 
-    private HeadersResult parseHeaders(BufferedReader br) throws IOException {
-        StringBuilder sb = new StringBuilder();
+    private HeadersResult parseHeaders(String[] lines) {
+        Map<String, String> headers = new HashMap<>();
         int contentLength = 0;
         Map<String, String> cookies = new HashMap<>();
 
-        String line;
-        while ((line = br.readLine()) != null && !line.isEmpty()) {
-            sb.append(line).append("\n");
+        for (int i = 1; i < lines.length; i++) {
+            String line = lines[i];
+            if (line.isEmpty()) break;
 
             int idx = line.indexOf(':');
             if (idx > 0) {
@@ -79,20 +112,7 @@ public class HttpParser {
             }
         }
 
-        return new HeadersResult(sb.toString(), contentLength, cookies);
-    }
-
-    private String parseBody(BufferedReader br, int contentLength) throws IOException {
-        if (contentLength <= 0) return "";
-
-        char[] buf = new char[contentLength];
-        int readTotal = 0;
-        while (readTotal < contentLength) {
-            int r = br.read(buf, readTotal, contentLength - readTotal);
-            if (r == -1) break;
-            readTotal += r;
-        }
-        return new String(buf, 0, readTotal);
+        return new HeadersResult(headers, contentLength, cookies);
     }
 
     private Map<String, String> parseCookie(String rawCookie) {
@@ -108,7 +128,7 @@ public class HttpParser {
             pair = pair.trim();
             if (pair.isEmpty()) continue;
 
-            String[] kv = pair.split("=", 2); // ★ 중요: 2개만
+            String[] kv = pair.split("=", 2);
             String key = kv[0].trim();
             String value = kv.length > 1 ? kv[1].trim() : "";
 
@@ -132,11 +152,11 @@ public class HttpParser {
     }
 
     private static class HeadersResult {
-        final String rawHeaders;
-        Map<String, String> cookies = new HashMap<>();
+        final Map<String, String> headers;
         final int contentLength;
-        HeadersResult(String rawHeaders, int contentLength, Map<String, String> cookies) {
-            this.rawHeaders = rawHeaders;
+        final Map<String, String> cookies;
+        HeadersResult(Map<String, String> headers, int contentLength, Map<String, String> cookies) {
+            this.headers = headers;
             this.contentLength = contentLength;
             this.cookies = cookies;
         }

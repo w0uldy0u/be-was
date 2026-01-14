@@ -4,8 +4,8 @@ import model.HttpMethod;
 import model.ParsedHttpRequest;
 import org.junit.jupiter.api.Test;
 
-import java.io.BufferedReader;
-import java.io.StringReader;
+import java.io.ByteArrayInputStream;
+import java.nio.charset.StandardCharsets;
 
 import static org.assertj.core.api.Assertions.*;
 
@@ -18,10 +18,9 @@ class HttpParserTest {
                         "Host: localhost\r\n" +
                         "\r\n";
 
-        BufferedReader br = new BufferedReader(new StringReader(raw));
         HttpParser parser = new HttpParser();
 
-        ParsedHttpRequest req = parser.parse(br);
+        ParsedHttpRequest req = parser.parse(new ByteArrayInputStream(raw.getBytes(StandardCharsets.UTF_8)));
 
         assertThat(req.getMethod()).isEqualTo(HttpMethod.GET);
         assertThat(req.getPath()).isEqualTo("/create");
@@ -41,10 +40,9 @@ class HttpParserTest {
                         "\r\n" +
                         body;
 
-        BufferedReader br = new BufferedReader(new StringReader(raw));
         HttpParser parser = new HttpParser();
 
-        ParsedHttpRequest req = parser.parse(br);
+        ParsedHttpRequest req = parser.parse(new ByteArrayInputStream(raw.getBytes(StandardCharsets.UTF_8)));
 
         assertThat(req.getMethod()).isEqualTo(HttpMethod.POST);
         assertThat(req.getPath()).isEqualTo("/login");
@@ -58,10 +56,9 @@ class HttpParserTest {
                         "Host: localhost\r\n" +
                         "\r\n";
 
-        BufferedReader br = new BufferedReader(new StringReader(raw));
         HttpParser parser = new HttpParser();
 
-        ParsedHttpRequest req = parser.parse(br);
+        ParsedHttpRequest req = parser.parse(new ByteArrayInputStream(raw.getBytes(StandardCharsets.UTF_8)));
 
         assertThat(req.getBody()).isEmpty();
     }
