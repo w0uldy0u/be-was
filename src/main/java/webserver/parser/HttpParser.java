@@ -102,6 +102,9 @@ public class HttpParser {
             if (idx > 0) {
                 String key = line.substring(0, idx).trim();
                 String val = line.substring(idx + 1).trim();
+
+                headers.put(key.toLowerCase(), val);
+
                 if (key.equalsIgnoreCase("Content-Length")) {
                     try { contentLength = Integer.parseInt(val); }
                     catch (NumberFormatException ignored) {}
