@@ -211,7 +211,8 @@ public class RequestHandler implements Runnable {
         logger.debug(profileImage);
 
         String html = TemplateEngine.render("mypage/index.html", Map.of(
-            "profileImage", profileImage
+            "profileImage", profileImage,
+            "nickname", currentUser.getName()
         ));
 
         HttpResponse res = HttpResponse.of(HttpStatus.OK)
