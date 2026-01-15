@@ -56,6 +56,8 @@ public class RequestHandler implements Runnable {
                         handleArticleUpload(request);
                     } else if (path.equals("/mypage/update")){
                         handleProfileUpdate(request);
+                    } else if (path.equals("/article/like")){
+                        handleLike(request);
                     }
                     break;
 
@@ -110,6 +112,35 @@ public class RequestHandler implements Runnable {
         }
 
         HttpResponse res = HttpResponse.redirect("/mypage");
+        HttpResponseSender.send(dos, res);
+    }
+
+    private void handleLike(ParsedHttpRequest req) throws IOException {
+        String sid = req.getCookie("SID");
+        User currentUser = Database.findUserBySid(sid);
+
+        if (currentUser == null) {
+            handleUnauthorized();
+            return;
+        }
+
+        Map<String, String> params = HttpParser.parseQueryParams(req.getBody());
+        String articleIdStr = params.get("articleId");
+
+        if (articleIdStr == null) {
+            handleBadRequest();
+            return;
+        }
+
+        int articleId = Integer.parseInt(articleIdStr);
+        Database.increaseLikes(articleId);
+        Article article = Database.findArticleById(articleId);
+
+        String jsonResponse = "{\"likes\": " + article.getLikes() + "}";
+
+        HttpResponse res = HttpResponse.of(HttpStatus.OK)
+                .contentType("application/json")
+                .body(jsonResponse.getBytes(StandardCharsets.UTF_8));
         HttpResponseSender.send(dos, res);
     }
 
@@ -245,6 +276,9 @@ public class RequestHandler implements Runnable {
         
         String nextArticleLink = (nextId != -1) ? "/main?id=" + nextId : "#";
         String nextArticleClass = (nextId != -1) ? "" : "disabled";
+        
+        int articleLikes = (article != null) ? article.getLikes() : 0;
+        String articleId = (article != null) ? String.valueOf(article.getId()) : "";
 
         String html = TemplateEngine.render("main/index.html", Map.of(
                 "username", currentUser.getUserId(),
@@ -254,7 +288,9 @@ public class RequestHandler implements Runnable {
                 "prevArticleLink", prevArticleLink,
                 "prevArticleClass", prevArticleClass,
                 "nextArticleLink", nextArticleLink,
-                "nextArticleClass", nextArticleClass
+                "nextArticleClass", nextArticleClass,
+                "article_id", articleId,
+                "article_likes", String.valueOf(articleLikes)
         ));
 
         HttpResponse res = HttpResponse.of(HttpStatus.OK)
