@@ -166,15 +166,12 @@ public class RequestHandler implements Runnable {
         String content = data.getTextField("content");
         byte[] image = data.getFileField("image");
 
-        if (content == null || content.isBlank()) {
+        if (image == null || image.length == 0) {
             handleBadRequest();
             return;
         }
 
-        String imagePath = null;
-        if (image != null && image.length > 0) {
-            imagePath = utils.ImageStore.saveImage(image, "jpg");
-        }
+        String imagePath = utils.ImageStore.saveImage(image, "jpg");
 
         Database.addArticle(currentUser.getUserId(), content, imagePath);
 

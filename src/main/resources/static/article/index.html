@@ -23,7 +23,7 @@
       </header>
       <div class="page">
         <h2 class="page-title">게시글 작성</h2>
-        <form class="form" action="/article" method="POST" enctype="multipart/form-data">
+        <form class="form" action="/article" method="POST" enctype="multipart/form-data" onsubmit="return checkImage()">
           <div class="textfield textfield_size_m">
             <p class="title_textfield">내용</p>
             <textarea
@@ -52,5 +52,15 @@
         </form>
       </div>
     </div>
+    <script>
+      function checkImage() {
+        const imageInput = document.querySelector('input[name="image"]');
+        if (!imageInput.files || imageInput.files.length === 0) {
+          alert('이미지를 첨부해주세요.');
+          return false;
+        }
+        return true;
+      }
+    </script>
   </body>
 </html>
