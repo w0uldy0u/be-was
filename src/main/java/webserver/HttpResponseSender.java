@@ -15,7 +15,6 @@ public class HttpResponseSender {
     private static final Logger logger = LoggerFactory.getLogger(RequestHandler.class);
 
     public static void send(DataOutputStream dos, HttpResponse res) throws IOException {
-        logger.debug(new String(res.getBody(), StandardCharsets.UTF_8));
         writeStatusLine(dos, res.getStatus());
         writeHeaders(dos, res);
         writeBody(dos, res.getBody());
