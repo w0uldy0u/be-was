@@ -54,12 +54,14 @@
   width: 100%;
   display: flex;
   justify-content: space-between;
+  align-items: center;
   height: 48px;
   border-bottom: 1px solid #ebebeb;
 }
 
 .post__menu__personal {
   display: flex;
+  align-items: center;
   gap: 8px;
 }
 
@@ -70,6 +72,20 @@
   margin: 0;
   border: 0;
   background: transparent;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+
+.post__menu__item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.post__menu__text {
+  font-size: 14px;
+  font-weight: 500;
 }
 
 .comment {

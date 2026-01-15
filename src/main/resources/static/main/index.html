@@ -34,15 +34,15 @@
           <img class="post__img" src="{{article_image}}" />
           <div class="post__menu">
             <ul class="post__menu__personal">
-              <li style="display: flex; align-items: center; gap: 8px;">
+              <li class="post__menu__item">
                 <button class="post__menu__btn" onclick="likeArticle({{article_id}})">
                   <img src="../img/like.svg" />
                 </button>
-                <span id="like-count" style="font-size: 14px; font-weight: 500;">{{article_likes}}</span>
+                <span id="like-count" class="post__menu__text">{{article_likes}}</span>
               </li>
               <li>
                 <button class="post__menu__btn">
-                  <img src="../img/sendLink.svg" />
+                  <img src="../img/comment.svg" />
                 </button>
               </li>
             </ul>
