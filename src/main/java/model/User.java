@@ -6,11 +6,18 @@ public class User {
     private String name;
     private String email;
 
+    private String profileImage;
+
     public User(String userId, String password, String name, String email) {
+        this(userId, password, name, email, null);
+    }
+
+    public User(String userId, String password, String name, String email, String profileImage) {
         this.userId = userId;
         this.password = password;
         this.name = name;
         this.email = email;
+        this.profileImage = profileImage;
     }
 
     public String getUserId() {
@@ -28,9 +35,13 @@ public class User {
     public String getEmail() {
         return email;
     }
+    
+    public String getProfileImage() {
+        return profileImage;
+    }
 
     @Override
     public String toString() {
-        return "User [userId=" + userId + ", password=" + password + ", name=" + name + ", email=" + email + "]";
+        return "User [userId=" + userId + ", password=" + password + ", name=" + name + ", email=" + email + ", profileImage=" + profileImage + "]";
     }
 }

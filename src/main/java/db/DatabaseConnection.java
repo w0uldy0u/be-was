@@ -29,9 +29,12 @@ public class DatabaseConnection {
                     user_id VARCHAR(255) PRIMARY KEY,
                     password VARCHAR(255) NOT NULL,
                     name VARCHAR(255) NOT NULL,
-                    email VARCHAR(255) NOT NULL
+                    email VARCHAR(255) NOT NULL,
+                    profile_image VARCHAR(255)
                 )
             """);
+
+            stmt.execute("ALTER TABLE users ADD COLUMN IF NOT EXISTS profile_image VARCHAR(255)");
 
             stmt.execute("""
                 CREATE TABLE IF NOT EXISTS sessions (

@@ -38,4 +38,11 @@ public class Database {
     public static Collection<User> findAll() {
         return UserRepository.findAll();
     }
+    public static Article findLatestArticle() {
+        return ArticleRepository.findLatestArticle();
+    }
+
+    public static void updateProfileImage(String userId, String imagePath) {
+        UserRepository.updateProfileImage(userId, imagePath);
+    }
 }

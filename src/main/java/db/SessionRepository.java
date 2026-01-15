@@ -22,7 +22,7 @@ public class SessionRepository {
         if (sid == null) return null;
 
         String sql = """
-            SELECT u.user_id, u.password, u.name, u.email 
+            SELECT u.user_id, u.password, u.name, u.email, u.profile_image
             FROM users u 
             INNER JOIN sessions s ON u.user_id = s.user_id 
             WHERE s.sid = ?
@@ -36,7 +36,8 @@ public class SessionRepository {
                         rs.getString("user_id"),
                         rs.getString("password"),
                         rs.getString("name"),
-                        rs.getString("email")
+                        rs.getString("email"),
+                        rs.getString("profile_image")
                     );
                 }
             }
