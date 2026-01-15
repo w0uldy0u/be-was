@@ -57,4 +57,29 @@ public class ArticleRepository {
         }
         return null;
     }
+
+    public static int findPreviousArticleId(int currentId) {
+        String sql = "SELECT id FROM articles WHERE id < ? ORDER BY id DESC LIMIT 1";
+        return getArticleId(currentId, sql);
+    }
+
+    public static int findNextArticleId(int currentId) {
+        String sql = "SELECT id FROM articles WHERE id > ? ORDER BY id ASC LIMIT 1";
+        return getArticleId(currentId, sql);
+    }
+
+    private static int getArticleId(int currentId, String sql) {
+        try (Connection conn = DatabaseConnection.getConnection();
+             PreparedStatement pstmt = conn.prepareStatement(sql)) {
+            pstmt.setInt(1, currentId);
+            try (ResultSet rs = pstmt.executeQuery()) {
+                if (rs.next()) {
+                    return rs.getInt("id");
+                }
+            }
+        } catch (SQLException e) {
+            throw new RuntimeException("Failed to find article id", e);
+        }
+        return -1;
+    }
 }

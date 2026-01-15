@@ -45,4 +45,12 @@ public class Database {
     public static void updateProfileImage(String userId, String imagePath) {
         UserRepository.updateProfileImage(userId, imagePath);
     }
+
+    public static int findPreviousArticleId(int currentId) {
+        return ArticleRepository.findPreviousArticleId(currentId);
+    }
+
+    public static int findNextArticleId(int currentId) {
+        return ArticleRepository.findNextArticleId(currentId);
+    }
 }
