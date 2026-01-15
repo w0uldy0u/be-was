@@ -53,4 +53,8 @@ public class Database {
     public static int findNextArticleId(int currentId) {
         return ArticleRepository.findNextArticleId(currentId);
     }
+
+    public static void increaseLikes(int articleId) {
+        ArticleRepository.increaseLikes(articleId);
+    }
 }

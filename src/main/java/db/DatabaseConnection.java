@@ -50,9 +50,12 @@ public class DatabaseConnection {
                     author_id VARCHAR(255) NOT NULL,
                     content TEXT NOT NULL,
                     image VARCHAR(255),
+                    likes INT DEFAULT 0,
                     FOREIGN KEY (author_id) REFERENCES users(user_id)
                 )
             """);
+
+            stmt.execute("ALTER TABLE articles ADD COLUMN IF NOT EXISTS likes INT DEFAULT 0");
 
         } catch (SQLException e) {
             throw new RuntimeException("Failed to initialize database tables", e);
