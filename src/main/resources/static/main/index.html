@@ -34,10 +34,11 @@
           <img class="post__img" src="{{article_image}}" />
           <div class="post__menu">
             <ul class="post__menu__personal">
-              <li>
-                <button class="post__menu__btn">
+              <li style="display: flex; align-items: center; gap: 8px;">
+                <button class="post__menu__btn" onclick="likeArticle({{article_id}})">
                   <img src="../img/like.svg" />
                 </button>
+                <span id="like-count" style="font-size: 14px; font-weight: 500;">{{article_likes}}</span>
               </li>
               <li>
                 <button class="post__menu__btn">
@@ -139,5 +140,30 @@
         </nav>
       </div>
     </div>
+    <script>
+      function likeArticle(articleId) {
+        if (!articleId) return;
+        
+        fetch('/article/like', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/x-www-form-urlencoded',
+          },
+          body: 'articleId=' + articleId
+        })
+        .then(response => {
+           if (!response.ok) {
+             throw new Error('Network response was not ok');
+           }
+           return response.json();
+        })
+        .then(data => {
+          document.getElementById('like-count').innerText = data.likes;
+        })
+        .catch(error => {
+          console.error('Error liking article:', error);
+        });
+      }
+    </script>
   </body>
 </html>
