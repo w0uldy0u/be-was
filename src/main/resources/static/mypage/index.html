@@ -29,12 +29,15 @@
         <div class="profile_container">
           <div class="profile_box">
               <div class="profile_image">
-                <img class="profile" />
+                <img class="profile" src="{{profileImage}}" />
               </div>
               <div class="profile_frame">
-                  <div class="btn_profile">
-                        <div class="btn_container">수정</div>
-                  </div>
+                  <form id="profile-upload-form" action="/mypage/update" method="post" enctype="multipart/form-data">
+                      <input type="file" id="profile-upload-input" name="profileImage" accept="image/*" style="display: none;" onchange="document.getElementById('profile-upload-form').submit();" />
+                      <div class="btn_profile" onclick="document.getElementById('profile-upload-input').click();" style="cursor: pointer;">
+                            <div class="btn_container">수정</div>
+                      </div>
+                  </form>
                   <div class="btn_bar"></div>
                   <div class="btn_profile">
                       <div class="btn_container">삭제</div>

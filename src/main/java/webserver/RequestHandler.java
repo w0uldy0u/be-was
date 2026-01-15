@@ -54,6 +54,8 @@ public class RequestHandler implements Runnable {
                         handleLogout(request);
                     } else if (path.equals("/article")){
                         handleArticleUpload(request);
+                    } else if (path.equals("/mypage/update")){
+                        handleProfileUpdate(request);
                     }
                     break;
 
@@ -81,6 +83,34 @@ public class RequestHandler implements Runnable {
         catch (Exception e) {
             handleServerError(e);
         }
+    }
+
+    private void handleProfileUpdate(ParsedHttpRequest req) throws IOException {
+        String sid = req.getCookie("SID");
+        User currentUser = Database.findUserBySid(sid);
+
+        if (currentUser == null) {
+            handleUnauthorized();
+            return;
+        }
+
+        String boundary = MultipartParser.extractBoundary(req.getHeader("content-type"));
+        if (boundary == null) {
+            handleBadRequest();
+            return;
+        }
+
+        MultipartParser.MultipartData data = MultipartParser.parse(req.getRawBody(), boundary);
+        byte[] image = data.getFileField("profileImage");
+
+        if (image != null && image.length > 0) {
+            String imagePath = utils.ImageStore.saveImage(image, "jpg");
+            Database.updateProfileImage(currentUser.getUserId(), imagePath);
+            logger.debug(imagePath);
+        }
+
+        HttpResponse res = HttpResponse.redirect("/mypage");
+        HttpResponseSender.send(dos, res);
     }
 
     private void handleArticleUpload(ParsedHttpRequest req) throws IOException {
@@ -141,7 +171,23 @@ public class RequestHandler implements Runnable {
             HttpResponseSender.send(dos, res);
             return;
         }
-        serveStaticFile("/mypage");
+        
+        String profileImage = currentUser.getProfileImage();
+        if (profileImage == null) {
+            profileImage = ""; // Handle default or empty
+        }
+
+        logger.debug(profileImage);
+
+        String html = TemplateEngine.render("mypage/index.html", Map.of(
+            "profileImage", profileImage
+        ));
+
+        HttpResponse res = HttpResponse.of(HttpStatus.OK)
+                .contentType("text/html;charset=utf-8")
+                .body(html.getBytes(StandardCharsets.UTF_8));
+        
+        HttpResponseSender.send(dos, res);
     }
 
     private void handleLogout(ParsedHttpRequest req) throws IOException {
@@ -172,8 +218,20 @@ public class RequestHandler implements Runnable {
             return;
         }
 
+        Article article = Database.findLatestArticle();
+        String articleContent = (article != null) ? article.getContent() : "";
+        String articleImage = (article != null && article.getImagePath() != null) ? article.getImagePath() : "";
+        
+        String profileImage = currentUser.getProfileImage();
+        if (profileImage == null) {
+            profileImage = "";
+        }
+
         String html = TemplateEngine.render("main/index.html", Map.of(
-                "username", currentUser.getUserId()
+                "username", currentUser.getUserId(),
+                "article_content", articleContent,
+                "article_image", articleImage,
+                "profileImage", profileImage
         ));
 
         HttpResponse res = HttpResponse.of(HttpStatus.OK)
