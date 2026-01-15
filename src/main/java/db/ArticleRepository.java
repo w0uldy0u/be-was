@@ -39,4 +39,22 @@ public class ArticleRepository {
         }
         return null;
     }
+    public static Article findLatestArticle() {
+        String sql = "SELECT id, author_id, content, image FROM articles ORDER BY id DESC LIMIT 1";
+        try (Connection conn = DatabaseConnection.getConnection();
+             PreparedStatement pstmt = conn.prepareStatement(sql);
+             ResultSet rs = pstmt.executeQuery()) {
+            if (rs.next()) {
+                return new Article(
+                        rs.getInt("id"),
+                        rs.getString("author_id"),
+                        rs.getString("content"),
+                        rs.getString("image")
+                );
+            }
+        } catch (SQLException e) {
+            throw new RuntimeException("Failed to find latest article", e);
+        }
+        return null;
+    }
 }
