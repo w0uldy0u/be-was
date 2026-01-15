@@ -4,6 +4,7 @@ import java.io.*;
 import java.net.Socket;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
+import java.util.HashMap;
 import java.util.Map;
 import java.util.UUID;
 
@@ -281,19 +282,31 @@ public class RequestHandler implements Runnable {
         int articleLikes = (article != null) ? article.getLikes() : 0;
         String articleId = (article != null) ? String.valueOf(article.getId()) : "";
 
-        String html = TemplateEngine.render("main/index.html", Map.of(
-                "username", currentUser.getUserId(),
-                "article_content", articleContent,
-                "article_image", articleImage,
-                "profileImage", profileImage,
-                "prevArticleLink", prevArticleLink,
-                "prevArticleClass", prevArticleClass,
-                "nextArticleLink", nextArticleLink,
-                "nextArticleClass", nextArticleClass,
-                "article_id", articleId,
-                "article_likes", String.valueOf(articleLikes)
-        ));
+        String authorUsername = "";
+        String authorProfileImage = "";
+        if (article != null) {
+            authorUsername = article.getAuthorId();
+            User author = Database.findUserById(authorUsername);
+            if (author != null && author.getProfileImage() != null) {
+                authorProfileImage = author.getProfileImage();
+            }
+        }
 
+        Map<String, String> model = new HashMap<>();
+        model.put("username", currentUser.getUserId());
+        model.put("article_content", articleContent);
+        model.put("article_image", articleImage);
+        model.put("profileImage", profileImage);
+        model.put("author_username", authorUsername);
+        model.put("author_profile_image", authorProfileImage);
+        model.put("prevArticleLink", prevArticleLink);
+        model.put("prevArticleClass", prevArticleClass);
+        model.put("nextArticleLink", nextArticleLink);
+        model.put("nextArticleClass", nextArticleClass);
+        model.put("article_id", articleId);
+        model.put("article_likes", String.valueOf(articleLikes));
+
+        String html = TemplateEngine.render("main/index.html", model);
         HttpResponse res = HttpResponse.of(HttpStatus.OK)
                 .contentType("text/html;charset=utf-8")
                 .body(html.getBytes(StandardCharsets.UTF_8));
