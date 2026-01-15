@@ -218,7 +218,16 @@ public class RequestHandler implements Runnable {
             return;
         }
 
-        Article article = Database.findLatestArticle();
+        Map<String, String> params = req.getQueryParameters();
+        String articleIdStr = params.get("id");
+        Article article;
+
+        if (articleIdStr != null && !articleIdStr.isEmpty()) {
+            article = Database.findArticleById(Integer.parseInt(articleIdStr));
+        } else {
+            article = Database.findLatestArticle();
+        }
+
         String articleContent = (article != null) ? article.getContent() : "";
         String articleImage = (article != null && article.getImagePath() != null) ? article.getImagePath() : "";
         
@@ -227,11 +236,25 @@ public class RequestHandler implements Runnable {
             profileImage = "";
         }
 
+        int currentId = (article != null) ? article.getId() : 0;
+        int prevId = Database.findPreviousArticleId(currentId);
+        int nextId = Database.findNextArticleId(currentId);
+
+        String prevArticleLink = (prevId != -1) ? "/main?id=" + prevId : "#";
+        String prevArticleClass = (prevId != -1) ? "" : "disabled";
+        
+        String nextArticleLink = (nextId != -1) ? "/main?id=" + nextId : "#";
+        String nextArticleClass = (nextId != -1) ? "" : "disabled";
+
         String html = TemplateEngine.render("main/index.html", Map.of(
                 "username", currentUser.getUserId(),
                 "article_content", articleContent,
                 "article_image", articleImage,
-                "profileImage", profileImage
+                "profileImage", profileImage,
+                "prevArticleLink", prevArticleLink,
+                "prevArticleClass", prevArticleClass,
+                "nextArticleLink", nextArticleLink,
+                "nextArticleClass", nextArticleClass
         ));
 
         HttpResponse res = HttpResponse.of(HttpStatus.OK)
