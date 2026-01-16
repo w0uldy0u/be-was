@@ -80,8 +80,8 @@ public class HttpParser {
             if (param.isEmpty()) continue;
 
             String[] kv = param.split("=", 2);
-            String key = kv[0];
-            String value = kv.length > 1 ? kv[1] : "";
+            String key = java.net.URLDecoder.decode(kv[0], StandardCharsets.UTF_8);
+            String value = kv.length > 1 ? java.net.URLDecoder.decode(kv[1], StandardCharsets.UTF_8) : "";
 
             queryParams.put(key, value);
         }
