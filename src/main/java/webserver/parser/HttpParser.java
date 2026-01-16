@@ -106,7 +106,12 @@ public class HttpParser {
                 headers.put(key.toLowerCase(), val);
 
                 if (key.equalsIgnoreCase("Content-Length")) {
-                    try { contentLength = Integer.parseInt(val); }
+                    try {
+                        contentLength = Integer.parseInt(val);
+                        if (contentLength > 10 * 1024 * 1024) {
+                            throw new IOException("Payload Too Large");
+                        }
+                    }
                     catch (NumberFormatException ignored) {}
                 }
                 else if(key.equalsIgnoreCase("Cookie")){

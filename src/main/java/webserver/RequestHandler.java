@@ -34,6 +34,12 @@ public class RequestHandler implements Runnable {
             // TODO 사용자 요청에 대한 처리는 이 곳에 구현하면 된다.
             dos = new DataOutputStream(out);
             route(parseRequest(in));
+        } catch (IOException e) {
+            if ("Payload Too Large".equals(e.getMessage())) {
+                handlePayloadTooLarge();
+            } else {
+                handleServerError(e);
+            }
         } catch (Exception e) {
             handleServerError(e);
         }
@@ -544,5 +550,10 @@ public class RequestHandler implements Runnable {
     private void handleConflict(){
         logger.error("Conflict");
         sendError(HttpStatus.CONFLICT, "<h1>409 Conflict</h1>");
+    }
+
+    private void handlePayloadTooLarge() {
+        logger.error("Payload Too Large");
+        sendError(HttpStatus.PAYLOAD_TOO_LARGE, "<h1>413 Payload Too Large</h1>");
     }
 }
