@@ -61,4 +61,8 @@ public class Database {
     public static void increaseLikes(int articleId) {
         ArticleRepository.increaseLikes(articleId);
     }
+
+    public static void updateUser(User user) {
+        UserRepository.updateUser(user);
+    }
 }

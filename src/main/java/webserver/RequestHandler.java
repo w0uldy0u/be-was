@@ -107,15 +107,30 @@ public class RequestHandler implements Runnable {
         }
 
         MultipartParser.MultipartData data = MultipartParser.parse(req.getRawBody(), boundary);
+        
+        String name = data.getTextField("name");
+        String password = data.getTextField("password");
         byte[] image = data.getFileField("profileImage");
-
-        if (image != null && image.length > 0) {
-            String imagePath = utils.ImageStore.saveImage(image, "jpg");
-            Database.updateProfileImage(currentUser.getUserId(), imagePath);
-            logger.debug(imagePath);
+        String deleteImage = data.getTextField("deleteImage");
+        
+        if(name != null && !name.isBlank()){
+             currentUser.setName(name);
         }
 
-        HttpResponse res = HttpResponse.redirect("/mypage");
+        if(password != null && !password.isBlank()){
+            currentUser.setPassword(password);
+        }
+
+        if ("true".equals(deleteImage)) {
+            currentUser.setProfileImage("./img/profile.png");
+        } else if (image != null && image.length > 0) {
+            String imagePath = utils.ImageStore.saveImage(image, "jpg");
+            currentUser.setProfileImage(imagePath);
+        }
+
+        Database.updateUser(currentUser);
+
+        HttpResponse res = HttpResponse.redirect("/main");
         HttpResponseSender.send(dos, res);
     }
 
@@ -235,7 +250,7 @@ public class RequestHandler implements Runnable {
         
         String profileImage = currentUser.getProfileImage();
         if (profileImage == null) {
-            profileImage = ""; // Handle default or empty
+            profileImage = "./img/profile.png";
         }
 
         logger.debug(profileImage);
@@ -401,6 +416,9 @@ public class RequestHandler implements Runnable {
         }
 
         User newUser = new User(userId, password, name, email);
+        if(newUser.getProfileImage() == null || newUser.getProfileImage().isEmpty()){
+            newUser.setProfileImage("./img/profile.png");
+        }
         Database.addUser(newUser);
         logger.debug(newUser.toString());
         HttpResponse res = HttpResponse.redirect("/login");

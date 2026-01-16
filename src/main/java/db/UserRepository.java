@@ -100,4 +100,18 @@ public class UserRepository {
             throw new RuntimeException("Failed to update profile image", e);
         }
     }
+    public static void updateUser(User user) {
+        String sql = "UPDATE users SET password = ?, name = ?, email = ?, profile_image = ? WHERE user_id = ?";
+        try (Connection conn = DatabaseConnection.getConnection();
+             PreparedStatement pstmt = conn.prepareStatement(sql)) {
+            pstmt.setString(1, user.getPassword());
+            pstmt.setString(2, user.getName());
+            pstmt.setString(3, user.getEmail());
+            pstmt.setString(4, user.getProfileImage());
+            pstmt.setString(5, user.getUserId());
+            pstmt.executeUpdate();
+        } catch (SQLException e) {
+            throw new RuntimeException("Failed to update user", e);
+        }
+    }
 }

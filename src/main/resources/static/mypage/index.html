@@ -9,6 +9,7 @@
   <body>
     <div class="container">
       <header class="header">
+        <a href="/main"><img src="../img/signiture.svg" /></a>
         <ul class="header__menu">
           <li class="header__menu__item">
             <a href="/mypage" class="btn btn_ghost btn_size_s">안녕하세요, {{username}}님!</a>
@@ -28,29 +29,31 @@
       <div class="page">
         <h2 class="page-title">마이페이지</h2>
 
-        <div class="profile_container">
-          <div class="profile_box">
+        <form class="form" id="profile-form" action="/mypage/update" method="post" enctype="multipart/form-data">
+          <div class="profile_container">
+            <div class="profile_box">
               <div class="profile_image">
-                <img class="profile" src="{{profileImage}}" />
+                <img class="profile" id="profile-preview" src="{{profileImage}}" />
               </div>
               <div class="profile_frame">
-                  <form id="profile-upload-form" action="/mypage/update" method="post" enctype="multipart/form-data">
-                      <input type="file" id="profile-upload-input" name="profileImage" accept="image/*" style="display: none;" onchange="document.getElementById('profile-upload-form').submit();" />
-                      <div class="btn_profile" onclick="document.getElementById('profile-upload-input').click();" style="cursor: pointer;">
-                            <div class="btn_container">수정</div>
-                      </div>
-                  </form>
+                  <input type="file" id="profile-upload-input" name="profileImage" accept="image/*" style="display: none;" onchange="previewImage(this);" />
+                  <input type="hidden" id="delete-image-input" name="deleteImage" value="false" />
+                  <div class="btn_profile" onclick="document.getElementById('profile-upload-input').click();" style="cursor: pointer;">
+                        <div class="btn_container">수정</div>
+                  </div>
                   <div class="btn_bar"></div>
-                  <div class="btn_profile">
+                  <div class="btn_profile" onclick="deleteProfileImage()" style="cursor: pointer;">
                       <div class="btn_container">삭제</div>
                   </div>
               </div>
-        </div>
-          <form class="form">
+            </div>
+            
             <div class="textfield textfield_size_s input_margin">
               <p class="title_textfield">닉네임</p>
               <input
                 class="input_textfield"
+                name="name"
+                value="{{nickname}}"
                 placeholder="{{nickname}}"
                 autocomplete="username"
               />
@@ -59,8 +62,11 @@
               <p class="title_textfield">비밀번호</p>
               <input
                 class="input_textfield"
+                type="password"
+                name="password"
+                id="password"
                 placeholder="비밀번호를 변경할 경우 입력해주세요"
-                autocomplete="current-password"
+                autocomplete="new-password"
               />
             </div>
             <div class="textfield textfield_size_s">
@@ -68,21 +74,53 @@
               <input
                 class="input_textfield"
                 type="password"
+                id="password-confirm"
                 placeholder="한 번 더 입력해주세요"
-                autocomplete="current-password"
+                autocomplete="new-password"
               />
             </div>
             <button
-              id="registration-btn"
+              id="save-btn"
               class="btn btn_contained btn_size_m input_margin"
-            
-              type="button"
+              type="submit"
             >
               변경사항 저장
             </button>
-
+        </div>
         </form>
       </div>
+    </div>
+    <script>
+        const originalProfileImage = "{{profileImage}}";
+        const defaultProfileImage = "./img/profile.png";
+
+        function previewImage(input) {
+            if (input.files && input.files[0]) {
+                var reader = new FileReader();
+                reader.onload = function(e) {
+                    document.getElementById('profile-preview').src = e.target.result;
+                    document.getElementById('delete-image-input').value = "false";
+                };
+                reader.readAsDataURL(input.files[0]);
+            }
+        }
+
+        function deleteProfileImage() {
+            document.getElementById('profile-preview').src = defaultProfileImage;
+            document.getElementById('profile-upload-input').value = "";
+            document.getElementById('delete-image-input').value = "true";
+        }
+
+        document.getElementById('profile-form').addEventListener('submit', function(e) {
+            const password = document.getElementById('password').value;
+            const passwordConfirm = document.getElementById('password-confirm').value;
+
+            if (password && password !== passwordConfirm) {
+                e.preventDefault();
+                alert('비밀번호가 일치하지 않습니다.');
+            }
+        });
+    </script>
     </div>
   </body>
 </html>
