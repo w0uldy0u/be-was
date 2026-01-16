@@ -397,7 +397,7 @@ public class RequestHandler implements Runnable {
         User newUser = new User(userId, password, name, email);
         Database.addUser(newUser);
         logger.debug(newUser.toString());
-        HttpResponse res = HttpResponse.redirect("/");
+        HttpResponse res = HttpResponse.redirect("/login");
         HttpResponseSender.send(dos, res);
     }
 
