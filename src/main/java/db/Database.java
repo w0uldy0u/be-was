@@ -65,4 +65,12 @@ public class Database {
     public static void updateUser(User user) {
         UserRepository.updateUser(user);
     }
+
+    public static void addComment(model.Comment comment) {
+        CommentRepository.addComment(comment);
+    }
+
+    public static Collection<model.Comment> findAllCommentsByArticleId(int articleId) {
+        return CommentRepository.findAllByArticleId(articleId);
+    }
 }

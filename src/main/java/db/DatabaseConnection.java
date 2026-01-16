@@ -57,6 +57,17 @@ public class DatabaseConnection {
 
             stmt.execute("ALTER TABLE articles ADD COLUMN IF NOT EXISTS likes INT DEFAULT 0");
 
+            stmt.execute("""
+                CREATE TABLE IF NOT EXISTS comments (
+                    id INT AUTO_INCREMENT PRIMARY KEY,
+                    article_id INT NOT NULL,
+                    author_id VARCHAR(255) NOT NULL,
+                    content TEXT NOT NULL,
+                    FOREIGN KEY (article_id) REFERENCES articles(id),
+                    FOREIGN KEY (author_id) REFERENCES users(user_id)
+                )
+            """);
+
         } catch (SQLException e) {
             throw new RuntimeException("Failed to initialize database tables", e);
         }
