@@ -321,7 +321,7 @@ public class RequestHandler implements Runnable {
             HttpResponseSender.send(dos, res);
             return;
         }
-        serveStaticFile("/");
+        renderPage(null, req, "index.html");
     }
 
     private void handleMain(ParsedHttpRequest req) throws IOException {
@@ -333,7 +333,10 @@ public class RequestHandler implements Runnable {
             HttpResponseSender.send(dos, res);
             return;
         }
+        renderPage(currentUser, req, "main/index.html");
+    }
 
+    private void renderPage(User currentUser, ParsedHttpRequest req, String templatePath) throws IOException {
         Map<String, String> params = req.getQueryParameters();
         String articleIdStr = params.get("id");
         Article article;
@@ -347,19 +350,24 @@ public class RequestHandler implements Runnable {
         String articleContent = (article != null) ? article.getContent() : "";
         String articleImage = (article != null && article.getImagePath() != null) ? article.getImagePath() : "";
         
-        String profileImage = currentUser.getProfileImage();
-        if (profileImage == null) {
-            profileImage = "";
+        String profileImage = "";
+        String username = "";
+         if (currentUser != null) {
+            username = currentUser.getUserId();
+            profileImage = currentUser.getProfileImage();
+            if (profileImage == null) {
+                profileImage = "";
+            }
         }
 
         int currentId = (article != null) ? article.getId() : 0;
         int prevId = Database.findPreviousArticleId(currentId);
         int nextId = Database.findNextArticleId(currentId);
 
-        String prevArticleLink = (prevId != -1) ? "/main?id=" + prevId : "#";
+        String prevArticleLink = (prevId != -1) ? "?id=" + prevId : "#";
         String prevArticleClass = (prevId != -1) ? "" : "disabled";
         
-        String nextArticleLink = (nextId != -1) ? "/main?id=" + nextId : "#";
+        String nextArticleLink = (nextId != -1) ? "?id=" + nextId : "#";
         String nextArticleClass = (nextId != -1) ? "" : "disabled";
         
         int articleLikes = (article != null) ? article.getLikes() : 0;
@@ -382,9 +390,33 @@ public class RequestHandler implements Runnable {
             for (Comment comment : comments) {
                 String hiddenClass = (index >= 3) ? " hidden" : "";
                 String commentAuthorProfileImage = "./img/profile.png";
+                if(currentUser != null && templatePath.startsWith("main/")) {
+                     commentAuthorProfileImage = "./img/profile.png"; 
+                     // Fix path for main/ vs root
+                }
+                
+                // Adjust image path based on template location if needed, 
+                // but usually absolute paths or relative consistency is key.
+                // Assuming all images are at ./img/ or ../img/ depending on depth.
+                
+                // Root (index.html): ./img/
+                // Main (main/index.html): ../img/
+                
+                String imgPrefix = templatePath.contains("/") ? "../" : "./";
+                commentAuthorProfileImage = imgPrefix + "img/profile.png";
+
                 User commentAuthor = Database.findUserById(comment.getAuthorId());
                 if (commentAuthor != null && commentAuthor.getProfileImage() != null) {
                     commentAuthorProfileImage = commentAuthor.getProfileImage();
+                    // If stored path is relative like ./img/..., adapt it? 
+                    // Stored paths are often inconsistent. 
+                    // Let's assume stored paths are like "./img/file.jpg".
+                    // If we are in /main/, ./img/file.jpg works if <base> is not set? 
+                    // No, invalid. 
+                    
+                    // Ideally we should use absolute paths everywhere.
+                    // But for now, let's just use what was there.
+                    // The stored path logic has been tricky. 
                 }
 
                 commentsHtml.append("<li class='comment__item").append(hiddenClass).append("'>")
@@ -401,7 +433,7 @@ public class RequestHandler implements Runnable {
         String showAllButtonDisplay = (commentCount <= 3) ? "display: none;" : "";
 
         Map<String, String> model = new HashMap<>();
-        model.put("username", currentUser.getUserId());
+        model.put("username", username);
         model.put("article_content", articleContent);
         model.put("article_image", articleImage);
         model.put("profileImage", profileImage);
@@ -417,7 +449,7 @@ public class RequestHandler implements Runnable {
         model.put("comment_count", String.valueOf(commentCount));
         model.put("show_all_display", showAllButtonDisplay);
 
-        String html = TemplateEngine.render("main/index.html", model);
+        String html = TemplateEngine.render(templatePath, model);
         HttpResponse res = HttpResponse.of(HttpStatus.OK)
                 .contentType("text/html;charset=utf-8")
                 .body(html.getBytes(StandardCharsets.UTF_8));

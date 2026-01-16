@@ -112,7 +112,9 @@ public class HttpParser {
                             throw new IOException("Payload Too Large");
                         }
                     }
-                    catch (NumberFormatException ignored) {}
+                    catch (NumberFormatException ignored) {} catch (IOException e) {
+                        throw new RuntimeException(e);
+                    }
                 }
                 else if(key.equalsIgnoreCase("Cookie")){
                     cookies = parseCookie(val);
