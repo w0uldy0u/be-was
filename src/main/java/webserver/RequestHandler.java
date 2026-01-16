@@ -75,6 +75,9 @@ public class RequestHandler implements Runnable {
                     else if (path.equals("/article")){
                         handleWrite(request);
                     }
+                    else if (path.equals("/comment")){
+                        handleComment(request);
+                    }
                     else {
                         serveStaticFile(path);
                     }
@@ -188,7 +191,36 @@ public class RequestHandler implements Runnable {
             HttpResponseSender.send(dos, res);
             return;
         }
-        serveStaticFile("/article");
+        String html = TemplateEngine.render("article/index.html", Map.of(
+            "username", currentUser.getUserId()
+        ));
+
+        HttpResponse res = HttpResponse.of(HttpStatus.OK)
+                .contentType("text/html;charset=utf-8")
+                .body(html.getBytes(StandardCharsets.UTF_8));
+
+        HttpResponseSender.send(dos, res);
+    }
+
+    private void handleComment(ParsedHttpRequest req) throws IOException {
+        String sid = req.getCookie("SID");
+        User currentUser = Database.findUserBySid(sid);
+
+        if(currentUser == null){
+            HttpResponse res = HttpResponse.redirect("/login");
+            HttpResponseSender.send(dos, res);
+            return;
+        }
+
+        String html = TemplateEngine.render("comment/index.html", Map.of(
+            "username", currentUser.getUserId()
+        ));
+
+        HttpResponse res = HttpResponse.of(HttpStatus.OK)
+                .contentType("text/html;charset=utf-8")
+                .body(html.getBytes(StandardCharsets.UTF_8));
+
+        HttpResponseSender.send(dos, res);
     }
 
     private void handleMypage(ParsedHttpRequest req) throws IOException {
@@ -210,6 +242,7 @@ public class RequestHandler implements Runnable {
 
         String html = TemplateEngine.render("mypage/index.html", Map.of(
             "profileImage", profileImage,
+            "username", currentUser.getUserId(),
             "nickname", currentUser.getName()
         ));
 
