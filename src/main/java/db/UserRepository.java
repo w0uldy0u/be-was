@@ -46,6 +46,28 @@ public class UserRepository {
         return null;
     }
 
+    public static User findUserByName(String name) {
+        String sql = "SELECT user_id, password, name, email, profile_image FROM users WHERE name = ?";
+        try (Connection conn = DatabaseConnection.getConnection();
+             PreparedStatement pstmt = conn.prepareStatement(sql)) {
+            pstmt.setString(1, name);
+            try (ResultSet rs = pstmt.executeQuery()) {
+                if (rs.next()) {
+                    return new User(
+                        rs.getString("user_id"),
+                        rs.getString("password"),
+                        rs.getString("name"),
+                        rs.getString("email"),
+                        rs.getString("profile_image")
+                    );
+                }
+            }
+        } catch (SQLException e) {
+            throw new RuntimeException("Failed to find user by name", e);
+        }
+        return null;
+    }
+
     public static Collection<User> findAll() {
         List<User> users = new ArrayList<>();
         String sql = "SELECT user_id, password, name, email, profile_image FROM users";

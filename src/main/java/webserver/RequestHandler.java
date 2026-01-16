@@ -386,6 +386,14 @@ public class RequestHandler implements Runnable {
             return;
         }
 
+        User existingUserById = Database.findUserById(userId);
+        User existingUserByName = Database.findUserByName(name);
+
+        if (existingUserById != null || existingUserByName != null) {
+            handleConflict();
+            return;
+        }
+
         User newUser = new User(userId, password, name, email);
         Database.addUser(newUser);
         logger.debug(newUser.toString());
@@ -447,5 +455,10 @@ public class RequestHandler implements Runnable {
     private void handleUnauthorized(){
         logger.error("Unauthorized");
         sendError(HttpStatus.UNAUTHORIZED, "<h1>401 Unauthorized</h1>");
+    }
+
+    private void handleConflict(){
+        logger.error("Conflict");
+        sendError(HttpStatus.CONFLICT, "<h1>409 Conflict</h1>");
     }
 }

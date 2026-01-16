@@ -15,6 +15,10 @@ public class Database {
         return UserRepository.findUserById(userId);
     }
 
+    public static User findUserByName(String name) {
+        return UserRepository.findUserByName(name);
+    }
+
     public static void addSession(String sid, String userId) {
         SessionRepository.addSession(sid, userId);
     }
