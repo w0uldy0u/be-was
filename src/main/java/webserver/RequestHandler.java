@@ -59,6 +59,8 @@ public class RequestHandler implements Runnable {
                         handleProfileUpdate(request);
                     } else if (path.equals("/article/like")){
                         handleLike(request);
+                    } else if (path.equals("/comment/create")){
+                        handleCommentCreate(request);
                     }
                     break;
 
@@ -89,6 +91,32 @@ public class RequestHandler implements Runnable {
         catch (Exception e) {
             handleServerError(e);
         }
+    }
+
+    private void handleCommentCreate(ParsedHttpRequest req) throws IOException {
+        String sid = req.getCookie("SID");
+        User currentUser = Database.findUserBySid(sid);
+
+        if (currentUser == null) {
+            handleUnauthorized();
+            return;
+        }
+
+        Map<String, String> params = HttpParser.parseQueryParams(req.getBody());
+        String articleIdStr = params.get("articleId");
+        String content = params.get("content");
+
+        if (articleIdStr == null || content == null) {
+            handleBadRequest();
+            return;
+        }
+
+        int articleId = Integer.parseInt(articleIdStr);
+        Comment comment = new Comment(0, articleId, currentUser.getUserId(), content);
+        Database.addComment(comment);
+
+        HttpResponse res = HttpResponse.redirect("/main?id=" + articleId);
+        HttpResponseSender.send(dos, res);
     }
 
     private void handleProfileUpdate(ParsedHttpRequest req) throws IOException {
@@ -227,8 +255,12 @@ public class RequestHandler implements Runnable {
             return;
         }
 
+        Map<String, String> params = req.getQueryParameters();
+        String articleId = params.get("articleId");
+
         String html = TemplateEngine.render("comment/index.html", Map.of(
-            "username", currentUser.getUserId()
+            "username", currentUser.getUserId(),
+            "articleId", articleId != null ? articleId : ""
         ));
 
         HttpResponse res = HttpResponse.of(HttpStatus.OK)
@@ -329,13 +361,38 @@ public class RequestHandler implements Runnable {
 
         String authorUsername = "";
         String authorProfileImage = "";
+        StringBuilder commentsHtml = new StringBuilder();
+        int commentCount = 0;
         if (article != null) {
             authorUsername = article.getAuthorId();
             User author = Database.findUserById(authorUsername);
             if (author != null && author.getProfileImage() != null) {
                 authorProfileImage = author.getProfileImage();
             }
+            
+            java.util.Collection<Comment> comments = Database.findAllCommentsByArticleId(article.getId());
+            commentCount = comments.size();
+            int index = 0;
+            for (Comment comment : comments) {
+                String hiddenClass = (index >= 3) ? " hidden" : "";
+                String commentAuthorProfileImage = "./img/profile.png";
+                User commentAuthor = Database.findUserById(comment.getAuthorId());
+                if (commentAuthor != null && commentAuthor.getProfileImage() != null) {
+                    commentAuthorProfileImage = commentAuthor.getProfileImage();
+                }
+
+                commentsHtml.append("<li class='comment__item").append(hiddenClass).append("'>")
+                            .append("<div class='comment__item__user'>")
+                            .append("<img class='comment__item__user__img' src='").append(commentAuthorProfileImage).append("' />")
+                            .append("<p class='comment__item__user__nickname'>").append(comment.getAuthorId()).append("</p>")
+                            .append("</div>")
+                            .append("<p class='comment__item__article'>").append(comment.getContent()).append("</p>")
+                            .append("</li>");
+                index++;
+            }
         }
+        
+        String showAllButtonDisplay = (commentCount <= 3) ? "display: none;" : "";
 
         Map<String, String> model = new HashMap<>();
         model.put("username", currentUser.getUserId());
@@ -350,6 +407,9 @@ public class RequestHandler implements Runnable {
         model.put("nextArticleClass", nextArticleClass);
         model.put("article_id", articleId);
         model.put("article_likes", String.valueOf(articleLikes));
+        model.put("comments", commentsHtml.toString());
+        model.put("comment_count", String.valueOf(commentCount));
+        model.put("show_all_display", showAllButtonDisplay);
 
         String html = TemplateEngine.render("main/index.html", model);
         HttpResponse res = HttpResponse.of(HttpStatus.OK)
