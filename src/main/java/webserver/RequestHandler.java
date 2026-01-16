@@ -354,7 +354,13 @@ public class RequestHandler implements Runnable {
         }
 
         User currentUser = Database.findUserById(userId);
-        if(currentUser != null && currentUser.getPassword().equals(pw)){
+        
+        if (currentUser == null) {
+            handleNotFound(new RuntimeException("User not found"));
+            return;
+        }
+
+        if(currentUser.getPassword().equals(pw)){
             logger.debug("Login Success");
             String sid = UUID.randomUUID().toString();
 
