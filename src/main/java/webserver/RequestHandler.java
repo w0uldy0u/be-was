@@ -381,6 +381,11 @@ public class RequestHandler implements Runnable {
             return;
         }
 
+        if (userId.length() < 4 || password.length() < 4 || name.length() < 4) {
+            handleBadRequest();
+            return;
+        }
+
         User newUser = new User(userId, password, name, email);
         Database.addUser(newUser);
         logger.debug(newUser.toString());

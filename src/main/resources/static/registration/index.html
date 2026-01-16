@@ -23,7 +23,7 @@
       </header>
       <div class="page">
         <h2 class="page-title">회원가입</h2>
-        <form class="form" action="/create" method="post">
+        <form class="form" action="/create" method="post" onsubmit="return checkLength()">
           <div class="textfield textfield_size_s">
             <p class="title_textfield">아이디</p>
             <input
@@ -73,5 +73,26 @@
         </form>
       </div>
     </div>
+    <script>
+      function checkLength() {
+        const userId = document.querySelector('input[name="userId"]').value;
+        const name = document.querySelector('input[name="name"]').value;
+        const password = document.querySelector('input[name="password"]').value;
+
+        if (userId.length < 4) {
+          alert('아이디는 4글자 이상이어야 합니다.');
+          return false;
+        }
+        if (name.length < 4) {
+          alert('닉네임은 4글자 이상이어야 합니다.');
+          return false;
+        }
+        if (password.length < 4) {
+          alert('비밀번호는 4글자 이상이어야 합니다.');
+          return false;
+        }
+        return true;
+      }
+    </script>
   </body>
 </html>
